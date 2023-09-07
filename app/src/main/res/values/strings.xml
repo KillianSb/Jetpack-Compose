@@ -1,3 +1,13 @@
 <resources>
     <string name="app_name">Jetpack Compose</string>
+    <string name="lorem">
+        Aenean ut lorem lectus.
+        Phasellus eget libero tristique, venenatis enim eu, placerat sem.
+        Suspendisse eu augue elementum, auctor libero id, ullamcorper nisl.
+        Mauris et elit et massa sollicitudin pretium. Proin a elit id urna blandit rhoncus ultrices non risus.
+        Curabitur non tellus magna.
+        Nulla ut porta felis.
+    </string>
+    <string name="show_less">Voir moins</string>
+    <string name="show_more">Voir plus</string>
 </resources>
