@@ -21,14 +21,17 @@ import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ExpandLess
 import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material3.Button
+import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
@@ -53,16 +56,87 @@ class MainActivity : ComponentActivity() {
     }
 }
 
+data class Task(val name: String, val detail: String)
+
 @Composable
 fun MyApp(modifier: Modifier = Modifier) {
 
     var shouldShowOnboarding by rememberSaveable { mutableStateOf(true) }
+    var shouldShowHome by rememberSaveable { mutableStateOf(false) }
+    var shouldShowForm by rememberSaveable { mutableStateOf(false) }
+
+    val tasks = remember { mutableStateListOf<Task>() }
 
     Surface(modifier) {
         if (shouldShowOnboarding) {
-            OnboardingScreen(onContinueClicked = { shouldShowOnboarding = false })
-        } else {
-            Greetings()
+            OnboardingScreen(onContinueClicked = { shouldShowOnboarding = false; shouldShowHome = true })
+        } else if (shouldShowHome) {
+            Greetings(
+                onContinueClicked = { shouldShowHome = false; shouldShowForm = true },
+                tasks = tasks
+            )
+        } else if (shouldShowForm) {
+            FormTache(
+                onContinueClicked = { shouldShowHome = true; shouldShowForm = false }
+            )
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+private fun FormTache(
+    onContinueClicked: (String) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    var taskName by remember { mutableStateOf("") }
+    var taskDetail by remember { mutableStateOf("") }
+
+    var tasks by remember { mutableStateOf(listOf<Task>()) }
+
+    Column(
+        modifier = modifier
+            .fillMaxSize()
+            .padding(16.dp),
+        verticalArrangement = Arrangement.Center,
+    ) {
+        Text(
+            text = "Formulaire de Tâche",
+            style = MaterialTheme.typography.titleMedium,
+            modifier = Modifier.padding(bottom = 16.dp)
+        )
+
+        OutlinedTextField(
+            value = taskName,
+            onValueChange = { taskName = it },
+            label = { Text("Nom de la tâche") },
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 16.dp)
+        )
+
+        OutlinedTextField(
+            value = taskDetail,
+            onValueChange = { taskDetail = it },
+            label = { Text("Détail de la tâche") },
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(bottom = 16.dp)
+        )
+
+        Button(
+            onClick = {
+                if (taskName.isNotEmpty() || taskDetail.isNotEmpty()) {
+                    val newTask = Task(taskName, taskDetail)
+                    tasks = tasks + newTask // Ajouter la tâche à la liste
+                    taskName = "" // Réinitialiser le champ de nom
+                    taskDetail = "" // Réinitialiser le champ de détail
+                    onContinueClicked // Appeler la fonction de continuation
+                }
+            },
+            modifier = Modifier.align(Alignment.End)
+        ) {
+            Text("Continuer")
         }
     }
 }
@@ -70,7 +144,8 @@ fun MyApp(modifier: Modifier = Modifier) {
 @Composable
 private fun Greetings(
     modifier: Modifier = Modifier,
-    names: List<String> = List(5) { "$it" }
+    onContinueClicked: () -> Unit,
+    tasks: List<Task>
 ) {
     Column() {
         Row(
@@ -83,21 +158,21 @@ private fun Greetings(
                 text = "Tâches",
             )
             Button(
-                onClick = {},
+                onClick = onContinueClicked,
             ) {
                 Icon(Icons.Default.Add, contentDescription = "Créer une tâche")
             }
         }
         LazyColumn(modifier = modifier.padding(vertical = 4.dp)) {
-            items(items = names) { name ->
-                Greeting(name = name)
+            items(items = tasks) { task ->
+                Greeting(task = task)
             }
         }
     }
 }
 
 @Composable
-private fun Greeting(name: String) {
+private fun Greeting(task: Task) {
     var expended by remember { mutableStateOf(false) }
 
     val extraPadding by animateDpAsState(
@@ -105,7 +180,7 @@ private fun Greeting(name: String) {
         animationSpec = spring(
             dampingRatio = Spring.DampingRatioMediumBouncy,
             stiffness = Spring.StiffnessLow
-        )
+        ), label = ""
     )
     Surface(
         color = MaterialTheme.colorScheme.primary,
@@ -118,15 +193,15 @@ private fun Greeting(name: String) {
                 .weight(1f)
                 .padding(bottom = extraPadding.coerceAtLeast(0.dp))
                 ) {
-                Text(text = "Tâche,")
+                Text(text = "Tâche :")
                 Text(
-                    text = name,
+                    text = task.name,
                     style = MaterialTheme.typography.headlineMedium.copy(
                         fontWeight = FontWeight.ExtraBold
                     )
                 )
                 Text(
-                    text = if (expended) stringResource(id = R.string.lorem) else "",
+                    text = if (expended) task.detail else "",
                     modifier = Modifier.padding(top = 16.dp)
                 )
             }
@@ -172,6 +247,14 @@ fun OnboardingScreen(
 
 }
 
+@Preview
+@Composable
+fun FormPreview() {
+    JetpackComposeTheme {
+        FormTache(onContinueClicked = {})
+    }
+}
+
 @Preview(
     showBackground = true,
     widthDp = 320,
@@ -182,7 +265,12 @@ fun OnboardingScreen(
 @Composable
 fun DefaultPreview() {
     JetpackComposeTheme {
-        Greetings()
+        val tasks = listOf(
+            Task("Tâche 1", "Détail de la tâche 1"),
+            Task("Tâche 2", "Détail de la tâche 2"),
+            Task("Tâche 3", "Détail de la tâche 3")
+        )
+        Greetings(onContinueClicked = {}, tasks = tasks)
     }
 }
 
