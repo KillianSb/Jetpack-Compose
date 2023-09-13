@@ -43,6 +43,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
+import androidx.room.Entity
 import com.example.jetpackcompose.ui.theme.JetpackComposeTheme
 
 class MainActivity : ComponentActivity() {
@@ -70,14 +71,20 @@ fun MyApp(modifier: Modifier = Modifier) {
     Surface(modifier) {
         if (shouldShowOnboarding) {
             OnboardingScreen(onContinueClicked = { shouldShowOnboarding = false; shouldShowHome = true })
-        } else if (shouldShowHome) {
+        }
+        else if (shouldShowHome) {
             Greetings(
                 onContinueClicked = { shouldShowHome = false; shouldShowForm = true },
                 tasks = tasks
             )
-        } else if (shouldShowForm) {
+        }
+        else if (shouldShowForm) {
             FormTache(
-                onContinueClicked = { shouldShowHome = true; shouldShowForm = false }
+                onContinueClicked = { name, detail ->
+                    // Traitez les valeurs de nom et de détail ici si nécessaire
+                    shouldShowForm = false
+                    shouldShowHome = true
+                }
             )
         }
     }
@@ -86,7 +93,7 @@ fun MyApp(modifier: Modifier = Modifier) {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun FormTache(
-    onContinueClicked: (String) -> Unit,
+    onContinueClicked: (String, String) -> Unit,
     modifier: Modifier = Modifier,
 ) {
     var taskName by remember { mutableStateOf("") }
@@ -128,10 +135,10 @@ private fun FormTache(
             onClick = {
                 if (taskName.isNotEmpty() || taskDetail.isNotEmpty()) {
                     val newTask = Task(taskName, taskDetail)
-                    tasks = tasks + newTask // Ajouter la tâche à la liste
+                    tasks += newTask // Ajouter la tâche à la liste
                     taskName = "" // Réinitialiser le champ de nom
                     taskDetail = "" // Réinitialiser le champ de détail
-                    onContinueClicked // Appeler la fonction de continuation
+                    onContinueClicked(taskName, taskDetail) // Appeler la fonction de continuation
                 }
             },
             modifier = Modifier.align(Alignment.End)
@@ -251,7 +258,9 @@ fun OnboardingScreen(
 @Composable
 fun FormPreview() {
     JetpackComposeTheme {
-        FormTache(onContinueClicked = {})
+        FormTache(onContinueClicked = { name, detail ->
+            // Traitez les valeurs de nom et de détail ici si nécessaire
+        })
     }
 }
 
